@@ -1,0 +1,12 @@
+{
+  "nbs.host" : "192.168.8.8",
+  "nbs.port" : 90,
+  "nbs.ssl" : false,
+  "nbs.app_name" : "go app",
+  "nbs.license_key" : "999-999-999",
+  "nbs.log_level" : "debug",
+  "nbs.log_file_name" : "log/private.log",
+  "nbs.audit" : true,
+  "nbs.max_log_count": 5,
+  "nbs.max_log_size": 10
+}

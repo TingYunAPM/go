@@ -1,0 +1,8 @@
+{
+  "nbs.app_name" : "invalid",
+  "nbs.license_key" : "invalid",
+  "nbs.log_file_name" : "log/invalid.log",
+  "nbs.audit" : true,
+  "nbs.max_log_count": 5,
+  "nbs.max_log_size": 10
+}

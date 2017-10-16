@@ -1,0 +1,6 @@
+{  
+  "nbs.log_file_name" : "log/log-small.log",
+  "nbs.audit" : true,
+  "nbs.max_log_count": 3,
+  "nbs.max_log_size": 1
+}
