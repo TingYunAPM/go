@@ -118,6 +118,6 @@ func main() {
 	采样数据上传失败时,在探针端保留的采样数据个数,用于应对网络故障
 # 框架支持
 ## gin
-参见 https://github.com/TingYunAPM/go/framework/gin/README.md
+参见 https://github.com/TingYunAPM/go/blob/master/framework/gin/README.md
 ## beego
-参见 https://github.com/TingYunAPM/go/framework/beego/README.md
+参见 https://github.com/TingYunAPM/go/blob/master/framework/beego/README.md
