@@ -1,19 +1,14 @@
 # tingyun_gin
 
-*[安装]()
-*[使用]()
-*[获取Action,使用Component]()
-*[其他]()
-
-##安装
+## 安装
 
 - 运行
 ```
 go get github.com/TingYunAPM/go
 ```
 
-##使用
-- ###引用: 
+## 使用
+- ### 引用: 
  main函数文件中引入
 ```
 import "github.com/TingYunAPM/go"
@@ -95,7 +90,7 @@ func main() {
 }
 ```
 
-##获取Action,使用Component
+## 获取Action,使用Component
 - 在Controller中获取tingyun.Action对象
 ```
 type MainController struct {
@@ -125,5 +120,5 @@ tingyun_beego.Handler("/api", http.HandlerFunc(func(w http.ResponseWriter, r *ht
 }))
 ```
 
-##其他
+## 其他
 请参考 github.com/TingYunAPM/go/GUIDE.md
