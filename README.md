@@ -83,6 +83,39 @@ func main() {
 	http.ListenAndServe(":8000", nil)
 }
 ```
+
+## 配置项说明
+```
+{
+  "nbs.app_name" : "go app",
+  "nbs.agent_enabled" : true,
+  "nbs.license_key" : "999-999-999",
+  "nbs.log_file_name" : "agent.log",
+  "nbs.audit" : true,
+  "nbs.max_log_count": 5,
+  "nbs.max_log_size": 10,
+  "nbs.ssl" : true,
+  "nbs.savecount" : 2
+}
+```
+### "nbs.app_name:
+    由探针使用者自定义的监控APP的名字
+###  "nbs.agent_enabled" :
+    探针禁用标志
+### "nbs.license_key":
+	使用者的license,登陆tingyun.com获得
+### "nbs.log_file_name" :
+	日志文件路径
+### "nbs.audit":
+	审计模式,开启审计模式,会在日志文件中输出到日志分析服务器的上行和下行数据。
+### "nbs.max_log_count":
+	日志文件最大个数
+### "nbs.max_log_size":
+	日志文件最大M字节数,此处为10M，超过10M日志就滚动打包成.tar.gz文件
+### "nbs.ssl" :
+	上传数据是否启用安全套接字
+### "nbs.savecount" :
+	采样数据上传失败时,在探针端保留的采样数据个数,用于应对网络故障
 # 框架支持
 ## gin
 参见 https://github.com/TingYunAPM/go/framework/gin/README.md
