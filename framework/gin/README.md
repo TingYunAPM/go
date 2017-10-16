@@ -1,11 +1,5 @@
 # tingyun_gin
 
-*[安装]()
-*[使用]()
-*[获取Action]()
-*[使用component]()
-*[其他]()
-
 ## 安装
 
 - 运行
@@ -39,7 +33,7 @@ func handler(c *gin.Context){
 }
 ```
 
-## 使用component
+## 使用Component
 ```
 func handler(c *gin.Context){
     action := tingyn_gin.FindAction(c)
