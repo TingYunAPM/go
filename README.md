@@ -116,6 +116,32 @@ func main() {
 	上传数据是否启用安全套接字
 ### "nbs.savecount" :
 	采样数据上传失败时,在探针端保留的采样数据个数,用于应对网络故障
+
+## 跨应用
+* 应用拓扑
+当一个帐号下存在多个应用的相互调用关系时, 可以利用API追踪应用之间的调用关系。
+调用者CreateTrackId, 被调用者SetTrackId, 在报表内就会产生“调用者” -> "被调用者" 的拓扑图。
+thrift 客户端
+```
+url := "thrift://192.168.1.5/login"
+c := tingyun.GetAction(w).CreateExternalComponent(url, "thrift.login")
+//调用CreateTrackId生成调用信息
+track := c.CreateTrackId()
+//将track传递给thrift服务器
+thriftLogin(url, track)
+//
+c.Finish()
+```
+thrift 服务器端
+```
+//从thrift数据内获取track, 并SetTrackId, 生成调用关系
+track := getTrack(r)
+tingyun.GetAction(w).SetTrackId(track)
+```
+* 跨应用追踪
+当产生拓扑关系的应用过程性能超过阈值时，会产生慢过程跟踪数据，同时在慢过程跟踪数据内会记录调用者和被调用者的详细追踪信息。
+通过点击慢过程跟踪图表内的链接，可以跳转到被调用者的详细追踪数据。
+
 # 框架支持
 
 ## http标准库
