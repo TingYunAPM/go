@@ -6,7 +6,7 @@
 *[使用component]()
 *[其他]()
 
-##安装
+## 安装
 
 - 运行
 
@@ -14,7 +14,7 @@
 go get github.com/TingYunAPM/go
 ```
 
-##使用
+## 使用
 
 - 引用: 
 main函数文件中引入
@@ -30,7 +30,7 @@ defer tingyun.AppStop()
 //router := gin.Default()
 router := tingyun_gin.Default()
 ```
-##获取Action
+## 获取Action
 - 在handler函数中获取tingyun.Action对象
 ```
 func handler(c *gin.Context){
@@ -39,7 +39,7 @@ func handler(c *gin.Context){
 }
 ```
 
-##使用component
+## 使用component
 ```
 func handler(c *gin.Context){
     action := tingyn_gin.FindAction(c)
@@ -52,5 +52,5 @@ func handler(c *gin.Context){
 }
 
 ```
-##其他
+## 其他
 请参考 github.com/TingYunAPM/go/GUIDE.md
