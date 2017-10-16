@@ -121,4 +121,4 @@ tingyun_beego.Handler("/api", http.HandlerFunc(func(w http.ResponseWriter, r *ht
 ```
 
 ## 其他
-请参考 github.com/TingYunAPM/go/GUIDE.md
+请参考 https://github.com/TingYunAPM/go/blob/master/GUIDE.md
