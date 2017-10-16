@@ -117,6 +117,46 @@ func main() {
 ### "nbs.savecount" :
 	采样数据上传失败时,在探针端保留的采样数据个数,用于应对网络故障
 # 框架支持
+
+## http标准库
+如果您使用了`http`标准库, 听云SDK提供了一个封装库来简化您的嵌码工作量, 
+封装库在HTTP request进入时自动创建并对应唯一一个应用过程(Action),
+在HTTP response结束时自动结束对应的应用过程(Action)。
+
+* 如果您使用`HandleFunc`方式, 请做如下替换:
+```
+http.HandleFunc("/login", loginHandler)
+```
+替换为
+```
+tingyun.HandleFunc("/login", loginHandler)
+```
+* 如果您使用`Handle`方式, 请做如下替换:
+```
+http.Handle("/login", http.HandlerFunc(loginHandler))
+```
+替换为
+```
+tingyun.Handle("/login", http.HandlerFunc(loginHandler))
+```
+* 如果您使用`Handler`方式, 请做如下替换:
+```
+Server.Handler = app.Handlers
+```
+替换为
+```
+Server.Handler = tingyun.WrapHandler(app.Handlers)
+```
+在loginHandler内, 您可以通过`tingyun.GetAction`获取HTTP请求上下文内的应用过程
+```
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	//增加下面一行代码（可选，根据您的需求变化可能是其他代码）
+	defer tingyun.GetAction(w).CreateComponent("loginHandler").Finish()
+	//原有业务逻辑
+	...
+}
+```
+
 ## gin
 参见 https://github.com/TingYunAPM/go/blob/master/framework/gin/README.md
 ## beego
