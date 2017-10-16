@@ -1,4 +1,4 @@
-# tingyun_gin
+# tingyun_beego
 
 ## 安装
 
