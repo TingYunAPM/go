@@ -1,0 +1,11 @@
+{
+  "nbs.app_name" : "go app b",
+  "nbs.agent_enabled" : true,
+  "nbs.license_key" : "999-999-999",
+  "nbs.log_file_name" : "agent.log",
+  "nbs.audit" : true,
+  "nbs.max_log_count": 5,
+  "nbs.max_log_size": 10,
+  "nbs.ssl" : false,
+  "nbs.savecount" : 2
+}
