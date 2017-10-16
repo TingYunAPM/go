@@ -47,4 +47,4 @@ func handler(c *gin.Context){
 
 ```
 ## 其他
-请参考 github.com/TingYunAPM/go/GUIDE.md
+请参考 https://github.com/TingYunAPM/go/blob/master/README.md
