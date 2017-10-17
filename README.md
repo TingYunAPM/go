@@ -187,3 +187,82 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 参见 https://github.com/TingYunAPM/go/blob/master/framework/gin/README.md
 ## beego
 参见 https://github.com/TingYunAPM/go/blob/master/framework/beego/README.md
+
+# API
+## func AppInit(jsonFile string) error 
+	探针初始化,参数jsonFile是配置文件路径。成功返回 nil,失败返回error
+## func AppStop() 
+	探针停止,结束数据采集。之后的除AppInit的所有API调用都将不会产生数据，同时也不会有性能损失。
+## func ConfigRead(name string) (interface{}, bool) 
+	读取探针配置项,如果应用需要关注探针的设置，则调用这个方法。一般情况下不需要。
+## func Log() *log.Logger 
+	返回一个具有日志输出功能的对象,在这个对象上调用日志输出方法,将输出到配置文件里设定的日志文件里。一般情况下应用应该有自己的日志模块，不需要调用这个方法。
+## func Running() bool 
+	检测探针是否在运行
+## type Action struct
+### func (a *Action) AddCustomParam(k string, v string) 
+	将uri携带的key-value参数传递给Action对象,协助应用在报表端分析慢过程追踪和错误追踪栈
+### func (a *Action) AddRequestParam(k string, v string) 
+	将http头携带的key-value 参数传递给Action对象,协助应用在报表端分析慢过程追踪和错误追踪栈
+### func (a *Action) CreateComponent(method string) *Component 
+	创建性能分解组件，作用为将一个HTTP请求拆分为多个可以度量的组件。 参数一般设置为对应的类名+方法名,格式="ClassName.MethodName",或者用户自己定义的过程名。
+### func (a *Action) CreateDBComponent(dbType uint8, host string, dbname string, table string, op string, method string) *Component
+	创建数据库或NOSQL性能分解组件 参数: 
+		dbType : 组件类型 (ComponentMysql, ComponentPostgreSql, ComponentMongo, ComponentMemCache, ComponentRedis)
+		host   : 主机地址，可空
+		dbname : 数据库名称，可空
+		table  : 数据库表名
+		op     : 操作类型, 关系型数据库("SELECT", "INSERT", "UPDATE", "DELETE" ...), NOSQL("GET", "SET" ...)
+		method : 发起这个数据库调用的类名.方法名, 例如 db.query redis.get 
+### func (a *Action) CreateExternalComponent(url string, method string) *Component 
+	创建Web Service性能分解组件 参数: 
+		url    : 调用Web Service的url,格式: http(s)://host/uri, 例如 http://www.tingyun.com/
+		method : 发起这个Web Service调用的类名.方法名, 例如 http.Get 
+### func (a *Action) GetName() string
+	读取Action格式化过的名字,通常不需要使用者调用
+### func (a *Action) GetUrl() string 
+	读取Action对应的URI
+### func (a *Action) HasError() bool 
+	一般用来检测是否调用过Action.SetError,或者是Action.SetStatusCode()调用传递大于等于400的状态码后,也会返回true
+### func (a *Action) Ignore() 
+	忽略这次Action的性能采集,只在Action.Finish()调用之前有效。
+### func (a *Action) SetError(e interface{}) 
+	运行时记录Action事务过程中的错误信息,将在报表端展示
+### func (a *Action) SetName(instance string, method string) 
+	修改Action的友好名称 参数: 
+		instance   : 分类, 例如 loginController
+		method : 方法, 例如 POST 
+### func (a *Action) SetStatusCode(code uint16) 
+	设置Action对应的http事务应答的http状态码,缺省值200
+### func (a *Action) SetTrackId(id string) 
+	用于rpc调用或者http外部调用的跨应用追踪,id 由使用者从调用端传过来。
+### func (a *Action) SetUrl(name string) 
+	设置对应Action的 uri, 用于追踪慢过程和错误分析。
+### func (a *Action) Slow() bool
+	根据用户的配置和当前事务的值行时间,判定对应的Action是否为慢过程.
+### func (a *Action) Finish() 
+	当前事务数据采集结束
+## func CreateAction(instance string, method string) (*Action, error) 
+	创建一个事务对应的Action对象
+		instance   : 分类, 例如 loginController
+		method : 方法, 例如 POST
+	举例: CreateAction("URI", "/index")
+		或 CreateAction("MyController", "POST")
+## type Component struct
+	性能分解组件
+### func (c *Component) CreateComponent(method string) *Component
+	对本组件再进行性能分解，创建下层性能分解组件，参数同Action.CreateComponent
+### func (c *Component) CreateTrackId() string 
+	用于跨应用追踪,本组件内调用了外部应用过程或者发起了rpc调用,由应用此方法返回的结果携带到server端,server端通过Action.SetTrackId使用这个结果。最终在报表端生成跨应用追踪图表
+### func (c *Component) GetAction() *Action 
+	取本组件所属的事务对象Action
+### func (c *Component) Finish() 
+	停止性能分解组件计时 性能分解组件时长 = Finish时刻 - CreateComponent时刻 当时长超出堆栈阈值时，记录当前组件的代码堆栈 
+## func Handle(pattern string, handler http.Handler) 
+	对http.Handle方法的包装,内部调用了CreateAction和 Action.Finish
+## func HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request)) 
+	对http.HandleFunc的包装,内部调用了CreateAction和 Action.Finish
+## func WrapHandler(h http.Handler) http.Handler 
+	封装http.Handler对象 例如： 初始代码为 app.Server.Handler = app.Handlers 应该替换为 app.Server.Handler = tingyun.WrapHandler(app.Handlers)
+## func GetAction(w http.ResponseWriter) *Action
+	对于 tingyun.Handle或tingyun.HandleFunc包装过的调用,应用处理过程的http.RewponseWriter参数已经被重新包装,通过此方法可以获取对应的Action,方便调用Action其他方法。
