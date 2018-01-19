@@ -6,7 +6,6 @@ package tingyun_beego
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 
@@ -37,10 +36,9 @@ func (w *responseWriter) Write(s []byte) (int, error) {
 //抓取状态码
 func (w *responseWriter) WriteHeader(status int) {
 	w.ResponseWriter.WriteHeader(status)
-	w.action.SetStatusCode(uint16(status))
-	fmt.Printf("WriteHeader:%d\n", status)
+	r := w.action.SetStatusCode(uint16(status))
 	w.writed = true
-	if status/100 > 3 && status != 401 {
+	if r == 3 {
 		w.action.Finish()
 	}
 }
