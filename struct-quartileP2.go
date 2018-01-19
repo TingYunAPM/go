@@ -118,6 +118,12 @@ func (q *quartileP2) Add(data float64) {
 }
 
 func (q *quartileP2) Markers() []float64 {
+	if q._Count == 0 {
+		for i := 0; i < q.MarkCount; i++ {
+			q._ResultValue[i] = 0
+		}
+		return q._ResultValue
+	}
 	if q.MarkCount <= q._Count {
 		return q._MarkersY
 	}

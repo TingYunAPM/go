@@ -239,16 +239,31 @@ func (a *Action) Finish() {
 	}
 	append_action(a)
 }
-func (a *Action) SetStatusCode(code uint16) {
+
+//正常返回0
+//无效的Action 返回1
+//如果状态码是被忽略的错误,返回2
+//错误的状态码,返回3
+func (a *Action) SetStatusCode(code uint16) int {
 	if a == nil || a.stateUsed != actionUsing {
-		return
+		return 1
 	}
 	if a.statusCode == 0 {
 		a.statusCode = code
 	}
-	if code > 400 && code != 401 { //401认证失败，非错误代码
+	if code >= 400 && code != 401 { //401认证失败，非错误代码
+		ignoredStatusCodes := app.configs.server_arrays.Read(configServerConfigIArrayIgnoredStatusCodes, nil)
+		if ignoredStatusCodes != nil {
+			for _, v := range ignoredStatusCodes {
+				if uint16(v) == code {
+					return 2
+				}
+			}
+		}
 		a.setError(errors.New(fmt.Sprint("status code ", code)), "HTTP_ERROR")
+		return 3
 	}
+	return 0
 }
 func agentEnabled() bool {
 	if app == nil {
@@ -266,7 +281,7 @@ func CreateAction(instance string, method string) (*Action, error) {
 			return nil, errors.New("Agent disabled by local config file.")
 		}
 		return nil, errors.New("Agent not Inited, please call AppInit() first.")
-	} else if app.actionPool.Size() > 10000 {
+	} else if app.actionPool.Size() > int32(app.configs.local.CIntegers.Read(configLocalIntegerNbsActionCacheMax, 10000)) {
 		return nil, errors.New("Server busy, Skip one action.")
 	}
 	return app.createAction(instance, method)

@@ -34,8 +34,7 @@ func profiler() gin.HandlerFunc {
 		c.Next()
 		c.Set(context_id, nil)
 		status := c.Writer.Status()
-		action.SetStatusCode(uint16(status))
-		if status/100 >= 4 {
+		if action.SetStatusCode(uint16(status)) == 3 {
 			querys := c.Request.URL.Query()
 			for k, v := range querys {
 				value := ""
@@ -52,7 +51,6 @@ func profiler() gin.HandlerFunc {
 				}
 				action.AddCustomParam(k, value)
 			}
-
 		}
 		action.Finish()
 		action = nil //Panic flag

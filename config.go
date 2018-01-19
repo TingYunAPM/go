@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/TingYunAPM/go/utils/cache_config"
@@ -41,13 +43,14 @@ const (
 	configServerIntegerApdex_t          = 2
 	configServerIntegerMax              = 8
 
-	configServerConfigStringActionTracerRecordSQL      = 1
-	configServerConfigStringRumScript                  = 2
-	configServerConfigStringExternalUrlParamsCaptured  = 3
-	configServerConfigStringWebActionURIParamsCaptured = 4
-	configServerConfigStringInstrumentationCustom      = 5
-	configServerConfigStringQuantile                   = 6
-	configServerConfigStringMax                        = 8
+	configServerConfigStringActionTracerRecordSQL            = 1
+	configServerConfigStringRumScript                        = 2
+	configServerConfigStringExternalUrlParamsCaptured        = 3
+	configServerConfigStringWebActionURIParamsCaptured       = 4
+	configServerConfigStringInstrumentationCustom            = 5
+	configServerConfigStringQuantile                         = 6
+	configServerConfigStringErrorCollectorIgnoredStatusCodes = 7
+	configServerConfigStringMax                              = 8
 
 	configServerConfigBoolAgentEnabled                   = 1
 	configServerConfigBoolAutoActionNaming               = 2
@@ -79,6 +82,9 @@ const (
 	configServerConfigIntegerResourceHigh                    = 7
 	configServerConfigIntegerResourceSafe                    = 8
 	configServerConfigIntegerMax                             = 10
+
+	configServerConfigIArrayIgnoredStatusCodes = 1
+	configServerConfigIArrayMax                = 8
 )
 
 var localStringKeyMap = map[string]int{
@@ -118,12 +124,13 @@ var serverIntegerKeyMap = map[string]int{
 }
 
 var serverConfigStringKeyMap = map[string]int{
-	"nbs.action_tracer.record_sql":       configServerConfigStringActionTracerRecordSQL,
-	"nbs.rum.script":                     configServerConfigStringRumScript,
-	"nbs.external_url_params_captured":   configServerConfigStringExternalUrlParamsCaptured,
-	"nbs.web_action_uri_params_captured": configServerConfigStringWebActionURIParamsCaptured,
-	"nbs.instrumentation_custom":         configServerConfigStringInstrumentationCustom,
-	"nbs.quantile":                       configServerConfigStringQuantile,
+	"nbs.action_tracer.record_sql":             configServerConfigStringActionTracerRecordSQL,
+	"nbs.rum.script":                           configServerConfigStringRumScript,
+	"nbs.external_url_params_captured":         configServerConfigStringExternalUrlParamsCaptured,
+	"nbs.web_action_uri_params_captured":       configServerConfigStringWebActionURIParamsCaptured,
+	"nbs.instrumentation_custom":               configServerConfigStringInstrumentationCustom,
+	"nbs.quantile":                             configServerConfigStringQuantile,
+	"nbs.error_collector.ignored_status_codes": configServerConfigStringErrorCollectorIgnoredStatusCodes,
 }
 
 var serverConfigBoolKeyMap = map[string]int{
@@ -169,15 +176,16 @@ var local_key_maps = configKeyMaps{localStringKeyMap, localBoolKeyMap, localInte
 var server_key_maps = configKeyMaps{serverStringKeyMap, serverBoolKeyMap, serverIntegerKeyMap}
 
 type configurations struct {
-	local       cache_config.Configuration
-	server      cache_config.Configuration
-	server_ext  cache_config.Configuration
-	svc         service.Service
-	apdexs      apdex_action_map
-	started     bool
-	login_error bool
-	login_count int64
-	reported    bool
+	local         cache_config.Configuration
+	server        cache_config.Configuration
+	server_ext    cache_config.Configuration
+	server_arrays cache_config.Arrays
+	svc           service.Service
+	apdexs        apdex_action_map
+	started       bool
+	login_error   bool
+	login_count   int64
+	reported      bool
 }
 
 func parse_config(filename string, c *cache_config.Configuration) error {
@@ -199,6 +207,7 @@ func (c *configurations) Init(configfile string) error {
 	c.local.Init(configLocalStringMax, configLocalBoolMax, configLocalIntegerMax)
 	c.server.Init(configServerStringMax, configServerBoolMax, configServerIntegerMax)
 	c.server_ext.Init(configServerConfigStringMax, configServerConfigBoolMax, configServerConfigIntegerMax)
+	c.server_arrays.Init(configServerConfigIArrayMax)
 	c.apdexs.Init()
 	err := parse_config(configfile, &c.local)
 	c.started = err == nil
@@ -277,6 +286,24 @@ func (c *configurations) UpdateServerConfig(result map[string]interface{}) bool 
 
 			c.server.Commit()
 			c.server_ext.Commit()
+			ignoreStatus := c.server_ext.CStrings.Read(configServerConfigStringErrorCollectorIgnoredStatusCodes, "")
+			if ignoreStatus != "" {
+				status_array := strings.Split(ignoreStatus, ",")
+				if len(status_array) > 0 {
+					int_array := make([]int64, len(status_array))
+					count := 0
+					for _, v := range status_array {
+						if b, err := strconv.Atoi(v); err == nil {
+							int_array[count] = int64(b)
+							count++
+						}
+					}
+					if count > 0 {
+						c.server_arrays.Update(configServerConfigIArrayIgnoredStatusCodes, int_array[0:count])
+					}
+				}
+			}
+			c.server_arrays.Commit()
 			c.apdexs.Commit()
 			c.login_count += 1
 		}
