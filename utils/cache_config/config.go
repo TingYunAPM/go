@@ -3,6 +3,11 @@
 //配置信息缓存的性能优化版本,无锁访问, array存储
 package cache_config
 
+import (
+	"errors"
+	"fmt"
+)
+
 type Configuration struct {
 	CStrings  Strings
 	CBools    Bools
@@ -13,6 +18,27 @@ func (c *Configuration) Init(stringMax, boolMax, integerMax int) {
 	c.CStrings.Init(stringMax)
 	c.CBools.Init(boolMax)
 	c.CIntegers.Init(integerMax)
+}
+
+func readInt(v interface{}) (error, int) {
+	switch r := v.(type) {
+	case float64:
+		return nil, int(r)
+	case float32:
+		return nil, int(r)
+	case int:
+		return nil, r
+	case int32:
+		return nil, int(r)
+	case int64:
+		return nil, int(r)
+	case uint32:
+		return nil, int(r)
+	case uint64:
+		return nil, int(r)
+	default:
+		return errors.New(fmt.Sprint(v, ":  not int value.")), 0
+	}
 }
 
 func (c *Configuration) Update(strings, bools, integers map[string]int, key string, value interface{}) bool {
@@ -31,11 +57,10 @@ func (c *Configuration) Update(strings, bools, integers map[string]int, key stri
 		}
 	}
 	if index, found := integers[key]; found {
-		if v, ok := value.(int); !ok {
-			return false
-		} else {
-			return c.CIntegers.Update(index, int64(v))
+		if err, vl := readInt(value); err == nil {
+			return c.CIntegers.Update(index, int64(vl))
 		}
+		return false
 	}
 	return false
 }
