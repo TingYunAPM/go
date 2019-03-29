@@ -138,6 +138,39 @@ thrift 服务器端
 track := getTrack(r)
 tingyun.GetAction(w).SetTrackId(track)
 ```
+http 客户端
+```
+		url := "http://192.168.1.5/extern"
+		c := tingyun_beego.GetAction(w).CreateExternalComponent(url, "main.Extern")
+		//产生一个跨应用追踪ID,传递给被调用端
+		track_id := c.CreateTrackId()
+		result, response, err := HttpGet(url, map[string]string{"X-Tingyun-Id": track_id})
+		if response != nil {
+			if tx_data := response.Header.Get("X-Tingyun-Tx-Data"); len(tx_data) > 0 {
+				//外部调用返回txData,调用Component.SetTxData接口保存
+				c.SetTxData(tx_data)
+			}
+		]
+		//
+		c.Finish()
+```
+http 服务器端
+```
+		//读取http头里的跨应用追踪ID
+		if track_id := r.Header.Get("X-Tingyun-Id"); len(track_id) > 0 {
+			//调用Action.SetTrackId接口保存追踪ID
+			tingyun_beego.GetAction(w).SetTrackId(track_id)
+		}
+		//...事务处理过程
+		//http应答,取当前事务的性能数据
+		if tx_data := tingyun_beego.GetAction(w).GetTxData(); len(tx_data) > 0 {
+			//将数据写入http响应头
+			w.Header().Set("X-Tingyun-Tx-Data", tx_data)
+		}
+		w.WriteHeader(200)
+		w.Write(result)
+```
+
 * 跨应用追踪
 当产生拓扑关系的应用过程性能超过阈值时，会产生慢过程跟踪数据，同时在慢过程跟踪数据内会记录调用者和被调用者的详细追踪信息。
 通过点击慢过程跟踪图表内的链接，可以跳转到被调用者的详细追踪数据。
@@ -236,6 +269,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	设置Action对应的http事务应答的http状态码,缺省值200
 ### func (a *Action) SetTrackId(id string) 
 	用于rpc调用或者http外部调用的跨应用追踪,id 由使用者从调用端传过来。
+### func (a *Action) GetTxData() string 
+	跨应用追踪接口,用于被调用端,获取当前事务的执行性能信息,通过http头或者自定义协议传回调用端
+	返回值: 事务的性能数据，调用端通过Component.SetTxData使用此结果
 ### func (a *Action) SetUrl(name string) 
 	设置对应Action的 uri, 用于追踪慢过程和错误分析。
 ### func (a *Action) Slow() bool
@@ -252,8 +288,14 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	性能分解组件
 ### func (c *Component) CreateComponent(method string) *Component
 	对本组件再进行性能分解，创建下层性能分解组件，参数同Action.CreateComponent
+### func (c *Component) AppendSQL(sql string)
+	用于数据库组件,通过此接口将sql查询语句保存到数据库组件,在报表慢事务追踪列表展示
+	参数: sql语句
 ### func (c *Component) CreateTrackId() string 
 	用于跨应用追踪,本组件内调用了外部应用过程或者发起了rpc调用,由应用此方法返回的结果携带到server端,server端通过Action.SetTrackId使用这个结果。最终在报表端生成跨应用追踪图表
+### func (c *Component) SetTxData(txData string)
+	跨应用追踪接口,用于调用端,将被调用端返回的事务性能数据保存到外部调用组件
+	参数: 被调用端返回的事务的性能数据
 ### func (c *Component) GetAction() *Action 
 	取本组件所属的事务对象Action
 ### func (c *Component) Finish() 

@@ -1,4 +1,4 @@
-// Copyright 2016-2017 冯立强 fenglq@tingyun.com.  All rights reserved.
+// Copyright 2016-2019 冯立强 fenglq@tingyun.com.  All rights reserved.
 
 package tingyun
 
@@ -25,6 +25,7 @@ func (m mapStructSqlTrace) Add(action *Action, component *Component) {
 		val.stackTrace = string(jsonbyte)
 		val.uri = action.url
 		val.time = component.time
+		val.sql = component.getSQL()
 	}
 	val.perf.Add(perf)
 }

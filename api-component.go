@@ -1,8 +1,9 @@
-// Copyright 2016-2017 冯立强 fenglq@tingyun.com.  All rights reserved.
+// Copyright 2016-2019 冯立强 fenglq@tingyun.com.  All rights reserved.
 
 package tingyun
 
 import (
+	"encoding/json"
 	"net/url"
 	"strings"
 	"time"
@@ -15,11 +16,13 @@ type Component struct {
 	pre       *Component
 	name      string
 	method    string
+	txdata    string
 	exId      bool
 	callStack interface{}
 	time      timeRange
 	aloneTime time.Duration
 	subs      list.List
+	sql       string
 	_type     uint8
 }
 
@@ -47,6 +50,10 @@ func (c *Component) Finish() {
 		}
 	}
 }
+
+//跨应用追踪接口,用于调用端,生成一个跨应用追踪id,通过http头或者私有协议发送到被调用端
+//
+//返回值: 字符串,一个包含授权id,应用id,实例id,事务id等信息的追踪id
 func (c *Component) CreateTrackId() string {
 	if app == nil || c == nil || c.action == nil || c._type != ComponentExternal {
 		return ""
@@ -66,6 +73,33 @@ func (c *Component) CreateTrackId() string {
 		}
 		return secId + ";c=1;x=" + c.action.unicId() + ";e=" + c.unicId() + ";p=" + protocol
 	}
+}
+
+//跨应用追踪接口,用于调用端,将被调用端返回的事务性能数据保存到外部调用组件
+//
+//参数: 被调用端返回的事务的性能数据
+func (c *Component) SetTxData(txData string) {
+	if app == nil || c == nil || c.action == nil || c._type != ComponentExternal {
+		return
+	}
+	jsonData := map[string]interface{}{}
+	if err := json.Unmarshal([]byte(txData), &jsonData); err != nil {
+		return
+	}
+	if err, tr := jsonReadInt(jsonData, "tr"); err == nil {
+		c.action.track_enable = (tr != 0)
+	}
+	c.txdata = txData
+}
+
+//用于数据库组件,通过此接口将sql查询语句保存到数据库组件,在报表慢事务追踪列表展示
+//
+//参数: sql语句
+func (c *Component) AppendSQL(sql string) {
+	if app == nil || c == nil || c.action == nil || (c._type != ComponentExternal && c._type != ComponentDefaultDB && c._type != ComponentMysql && c._type != ComponentPostgreSql) {
+		return
+	}
+	c.sql = sql
 }
 func (c *Component) CreateComponent(method string) *Component {
 	if c == nil || c.action == nil || c._type != ComponentDefault {

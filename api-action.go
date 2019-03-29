@@ -1,8 +1,9 @@
-// Copyright 2016-2017 冯立强 fenglq@tingyun.com.  All rights reserved.
+// Copyright 2016-2019 冯立强 fenglq@tingyun.com.  All rights reserved.
 
 package tingyun
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -37,6 +38,7 @@ type Action struct {
 	url           string
 	method        string
 	trackId       string
+	track_enable  bool
 	cache         pool.Pool
 	errors        pool.Pool
 	statusCode    uint16
@@ -119,6 +121,96 @@ func (a *Action) AddCustomParam(k string, v string) {
 	}
 	a.customParams[k] = v
 }
+
+//跨应用追踪接口,用于被调用端,获取当前事务的执行性能信息,通过http头或者自定义协议传回调用端
+//
+//返回值: 事务的性能数据
+func (a *Action) GetTxData() string {
+	if a == nil || a.stateUsed != actionUsing || len(a.trackId) == 0 {
+		return ""
+	}
+	if enabled := readServerConfigBool(configServerConfigBoolTransactionTracerEnabled, false); !enabled {
+		return ""
+	}
+	tr := 0
+	if a.track_enable || a.Slow() {
+		tr = 1
+	}
+	instance_id := ""
+	if secId := app.configs.server.CStrings.Read(configServerStringTingyunIdSecret, ""); len(secId) == 0 {
+		return ""
+	} else {
+		if parts := strings.Split(secId, "|"); len(parts) < 2 {
+			return ""
+		} else {
+			instance_id = strings.Split(parts[1], ";")[0]
+		}
+	}
+	curr_time := time.Now()
+	duration_ := a.time.GetDuration(curr_time)
+	var db_time time.Duration = 0
+	var mc_time time.Duration = 0
+	var mongo_time time.Duration = 0
+	var redis_time time.Duration = 0
+	var external_time time.Duration = 0
+	var code_time time.Duration = 0
+	a.cache.ForEach(func(v interface{}) {
+		component := v.(*Component)
+		duration := component.time.GetDuration(curr_time)
+		if component._type == ComponentDefault {
+			code_time += duration
+		} else if component._type == ComponentMysql || component._type == ComponentDefaultDB || component._type == ComponentPostgreSql {
+			db_time += duration
+		} else if component._type == ComponentExternal {
+			external_time += duration
+		} else if component._type == ComponentMemCache {
+			mc_time += duration
+		} else if component._type == ComponentMongo {
+			mongo_time += duration
+		} else if component._type == ComponentRedis {
+			redis_time += duration
+		}
+	})
+	time_obj := map[string]interface{}{
+		"duration": duration_ / time.Millisecond,
+		"qu":       0,
+	}
+	if db_time > 0 {
+		time_obj["db"] = db_time / time.Millisecond
+	}
+	if mc_time > 0 {
+		time_obj["mc"] = mc_time / time.Millisecond
+	}
+	if mongo_time > 0 {
+		time_obj["mon"] = mongo_time / time.Millisecond
+	}
+	if redis_time > 0 {
+		time_obj["rds"] = redis_time / time.Millisecond
+	}
+	if external_time > 0 {
+		time_obj["ex"] = external_time / time.Millisecond
+	}
+	if code_time > 0 {
+		time_obj["code"] = code_time / time.Millisecond
+	}
+	res := map[string]interface{}{
+		"id":     instance_id,
+		"action": a.GetName(),
+		"time":   time_obj,
+		"tr":     tr,
+	}
+	if tr > 0 {
+		res["trId"] = unicId(a.time.begin, a)
+	}
+	if json_byte, err := json.Marshal(res); err == nil {
+		return string(json_byte)
+	}
+	return ""
+}
+
+//跨应用追踪接口,用于被调用端,保存调用端传递过来的跨应用追踪id
+//
+//参数: 跨应用追踪id
 func (a *Action) SetTrackId(id string) {
 	if a == nil || a.stateUsed != actionUsing {
 		return

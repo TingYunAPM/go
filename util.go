@@ -1,4 +1,4 @@
-// Copyright 2016-2017 冯立强 fenglq@tingyun.com.  All rights reserved.
+// Copyright 2016-2019 冯立强 fenglq@tingyun.com.  All rights reserved.
 
 package tingyun
 
@@ -91,6 +91,12 @@ type timeRange struct {
 	duration time.Duration
 }
 
+func (t *timeRange) GetDuration(endTime time.Time) time.Duration {
+	if t.duration == -1 {
+		return endTime.Sub(t.begin)
+	}
+	return t.duration
+}
 func (t *timeRange) End() {
 
 	t.duration = time.Now().Sub(t.begin)

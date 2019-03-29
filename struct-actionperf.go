@@ -1,4 +1,4 @@
-// Copyright 2016-2017 冯立强 fenglq@tingyun.com.  All rights reserved.
+// Copyright 2016-2019 冯立强 fenglq@tingyun.com.  All rights reserved.
 
 package tingyun
 
@@ -75,6 +75,9 @@ func (p *structActionPerf) Add(action *Action, cb func(*Component)) {
 		switch component._type {
 		case ComponentExternal:
 			p.externalPerf.ExclAdd(component.metricName(), timeVal, timeVal)
+			if name, duration, remote_duration, found := component.externalTransaction(); found {
+				p.externalPerf.ExclAdd(name, duration, remote_duration)
+			}
 		case ComponentDefaultDB:
 			p.sql_perfs.Add(component.name, timeVal, timeVal)
 		case ComponentMemCache:

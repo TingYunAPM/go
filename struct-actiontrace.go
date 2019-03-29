@@ -1,4 +1,4 @@
-// Copyright 2016-2017 冯立强 fenglq@tingyun.com.  All rights reserved.
+// Copyright 2016-2019 冯立强 fenglq@tingyun.com.  All rights reserved.
 
 package tingyun
 
@@ -58,19 +58,19 @@ func newStructActionTrace(time *timeRange, uri string, statusCode uint16) *struc
 	r.components.Init()
 	return r
 }
-func serialJson(components *list.List, begin time.Time) []interface{} {
+func serialJson(components *list.List, begin time.Time, txid string) []interface{} {
 	if components.Size() == 0 {
 		return []interface{}{}
 	}
 	ret := make([]interface{}, components.Size())
 	for i, it := 0, components.Front(); !it.IsEnd(); it.MoveBack() {
 		v, _ := it.Value()
-		ret[i] = v.(*Component).serialJson(begin)
+		ret[i] = v.(*Component).serialJson(begin, txid)
 		i++
 	}
 	return ret
 }
-func (c *Component) serialJson(begin time.Time) interface{} {
+func (c *Component) serialJson(begin time.Time, txid string) interface{} {
 	segment := make([]interface{}, 9)
 	start := c.time.begin.Sub(begin) / time.Millisecond
 	segment[0] = start
@@ -89,9 +89,13 @@ func (c *Component) serialJson(begin time.Time) interface{} {
 	}
 	if c.exId {
 		params["externalId"] = c.unicId()
+		params["txId"] = txid
+		if len(c.txdata) > 0 {
+			params["txData"] = c.txdata
+		}
 	}
 	segment[7] = params
-	segment[8] = serialJson(&c.subs, begin)
+	segment[8] = serialJson(&c.subs, begin, txid)
 	return segment
 }
 func (p *structActionTrace) Read() interface{} {
@@ -108,7 +112,7 @@ func (p *structActionTrace) Read() interface{} {
 	rootSegment[5] = "Go"
 	rootSegment[6] = "execute"
 	rootSegment[7] = make(map[string]interface{})
-	rootSegment[8] = serialJson(&p.components, p.time.begin)
+	rootSegment[8] = serialJson(&p.components, p.time.begin, p.txId)
 	traceData[3] = &rootSegment
 	var traceItem [7]interface{}
 	traceItem[0] = p.time.begin.Unix()

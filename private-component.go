@@ -1,8 +1,9 @@
-// Copyright 2016-2017 冯立强 fenglq@tingyun.com.  All rights reserved.
+// Copyright 2016-2019 冯立强 fenglq@tingyun.com.  All rights reserved.
 
 package tingyun
 
 import (
+	"encoding/json"
 	"net/url"
 	"strings"
 	"time"
@@ -26,6 +27,7 @@ func (c *Component) destroy() {
 	}
 	c.name = ""
 	c.method = ""
+	c.txdata = ""
 	c.callStack = nil
 	c.pre = nil
 	c.action = nil
@@ -33,12 +35,13 @@ func (c *Component) destroy() {
 	//	app.componentTemps.Put(c)
 }
 
+//汇总还要修改
 func dbMetricName(name string) string {
 	array := strings.Split(name, "://")
 	serverDb, dburl := array[0], array[1]
 	array = strings.Split(dburl, "/")
-	_, _, table, op := array[0], array[1], array[2], array[3]
-	return "Database " + serverDb + "/" + url.QueryEscape(table) + "/" + url.QueryEscape(op)
+	host, db, table, op := array[0], array[1], array[2], array[3]
+	return "Database " + serverDb + "/" + strings.Replace(url.QueryEscape(host), "%3A", ":", -1) + "%2F" + url.QueryEscape(db) + "%2F" + url.QueryEscape(table) + "/" + url.QueryEscape(op)
 }
 func nosqlMetricName(name string) string {
 	array := strings.Split(name, "://")
@@ -48,6 +51,9 @@ func nosqlMetricName(name string) string {
 	return serverDb + "/" + url.QueryEscape(table) + "/" + url.QueryEscape(op)
 }
 func (c *Component) getSQL() string {
+	if c.sql != "" {
+		return c.sql
+	}
 	if c.isDatabaseComponent() {
 		return c.metricName()
 	}
@@ -61,6 +67,27 @@ func (c *Component) getURL() string {
 		return c.name
 	}
 	return ""
+}
+func (c *Component) externalTransaction() (metricName string, duration float64, remote_duration float64, found bool) {
+	if len(c.txdata) == 0 {
+		return "", 0, 0, false
+	}
+
+	jsonData := map[string]interface{}{}
+	if err := json.Unmarshal([]byte(c.txdata), &jsonData); err != nil {
+		return "", 0, 0, false
+	}
+	if err, secret_id := jsonReadString(jsonData, "id"); err != nil {
+		return "", 0, 0, false
+	} else if err, action := jsonReadString(jsonData, "action"); err != nil {
+		return "", 0, 0, false
+	} else if err, time_object := jsonReadObjects(jsonData, "time"); err != nil {
+		return "", 0, 0, false
+	} else if err, remote_duration := jsonReadFloat(time_object, "duration"); err != nil {
+		return "", 0, 0, false
+	} else {
+		return "ExternalTransaction/" + strings.Replace(c.name, "/", "%2F", -1) + "/" + secret_id + "%2F" + action, float64(c.time.duration / time.Millisecond), remote_duration, true
+	}
 }
 func (c *Component) metricName() string {
 	switch c._type {
@@ -96,9 +123,11 @@ func (c *Component) init(component string, method string, _type uint8) *Componen
 	c.pre = nil
 	c.name = component
 	c.method = method
+	c.txdata = ""
 	c.exId = false
 	c.callStack = nil
 	c.time = timeRange{time.Now(), -1}
+	c.sql = ""
 	c.aloneTime = 0
 	c.subs.Init()
 	c._type = _type

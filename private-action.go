@@ -1,4 +1,4 @@
-// Copyright 2016-2017 冯立强 fenglq@tingyun.com.  All rights reserved.
+// Copyright 2016-2019 冯立强 fenglq@tingyun.com.  All rights reserved.
 
 package tingyun
 
@@ -91,6 +91,7 @@ func (a *Action) init(name string) *Action {
 	a.name = name
 	a.url = ""
 	a.trackId = ""
+	a.track_enable = false
 	a.statusCode = 0
 	a.requestParams = make(map[string]string)
 	a.customParams = make(map[string]interface{})

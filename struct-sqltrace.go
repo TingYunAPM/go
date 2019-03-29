@@ -1,4 +1,4 @@
-// Copyright 2016-2017 冯立强 fenglq@tingyun.com.  All rights reserved.
+// Copyright 2016-2019 冯立强 fenglq@tingyun.com.  All rights reserved.
 
 package tingyun
 
@@ -11,6 +11,7 @@ type structSqlTrace struct {
 	time       timeRange
 	stackTrace string
 	uri        string
+	sql        string
 }
 
 func newStructSqlTrace() *structSqlTrace {
@@ -19,6 +20,7 @@ func newStructSqlTrace() *structSqlTrace {
 	ret.time.Init()
 	ret.stackTrace = "{}"
 	ret.uri = ""
+	ret.sql = ""
 	return ret
 }
 
@@ -46,7 +48,7 @@ func (s *structSqlTrace) Read(key string) interface{} {
 	traceItem[0] = s.time.begin.Unix()
 	traceItem[1], traceItem[2] = parseSqlTraceKey(key)
 	traceItem[3] = s.uri
-	traceItem[4] = traceItem[2]
+	traceItem[4] = s.sql
 	traceItem[5] = s.perf.Count
 	traceItem[6] = s.perf.Sum
 	traceItem[7] = s.perf.Max

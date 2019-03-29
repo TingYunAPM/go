@@ -1,4 +1,4 @@
-// Copyright 2016-2017 冯立强 fenglq@tingyun.com.  All rights reserved.
+// Copyright 2016-2019 冯立强 fenglq@tingyun.com.  All rights reserved.
 
 //无锁消息池，多读多写, 用于goroutine 间收发消息
 package pool
@@ -38,6 +38,16 @@ func (l *lockList) PushBack(n *node) bool {
 		l.end = n
 	}
 	return true
+}
+func (l *lockList) ForEach(cb func(v interface{})) {
+	used := atomic.AddInt32(&l.lock, 1)
+	defer atomic.AddInt32(&l.lock, -1)
+	if used != 1 || l.head == nil {
+		return
+	}
+	for node := l.head; node != nil; node = node.next {
+		cb(node.value)
+	}
 }
 func (l *lockList) PopFront() *node {
 	if l.head == nil {
@@ -96,6 +106,16 @@ func (p *nodePool) Put(n *node) {
 func (p *nodePool) Size() int32 {
 	return p.count
 }
+func (p *nodePool) ForEach(cb func(v interface{})) {
+	if p.count == 0 {
+		return
+	}
+	pread := p.indexRead
+	for i := pread; i-pread < bucketCount; i++ {
+		readListId := i % bucketCount
+		p.array[readListId].ForEach(cb)
+	}
+}
 
 func (p *nodePool) Get() *node {
 	if p.count == 0 {
@@ -131,6 +151,9 @@ func (p *Pool) Put(v interface{}) {
 }
 func (p *Pool) Size() int32 {
 	return p.pool.Size()
+}
+func (p *Pool) ForEach(cb func(v interface{})) {
+	p.pool.ForEach(cb)
 }
 func (p *Pool) Get() (interface{}, bool) {
 	n := p.pool.Get()
