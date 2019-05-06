@@ -4,7 +4,7 @@
 package tingyun_beego
 
 import (
-	"fmt"
+//	"fmt"
 	"net/http"
 
 	"github.com/TingYunAPM/go"
@@ -19,7 +19,6 @@ func finishAction(ctx *context.Context) {
 		} else {
 			p.action.Finish()
 		}
-		unWrapRequest(ctx.Request)
 		unWrapContext(ctx)
 	}
 }
@@ -32,8 +31,7 @@ func wrapContext(ctx *context.Context) {
 	if _, ok := ctx.ResponseWriter.ResponseWriter.(*responseWriter); !ok {
 		rs_writer := createResponseWriter(ctx.ResponseWriter.ResponseWriter, nil)
 		ctx.ResponseWriter.ResponseWriter = rs_writer
-		fmt.Printf("Context Create action %p\n", rs_writer.action)
-
+	//	fmt.Printf("Context Create action %p\n", rs_writer.action)
 		wrapRequest(ctx.Request, rs_writer.action)
 	}
 	FindAction(ctx).SetName(ctx.Request.Method, ctx.Request.RequestURI)
@@ -42,6 +40,8 @@ func wrapContext(ctx *context.Context) {
 //应用过程结束时解除hook,释放内存,还原原来的结构
 func unWrapContext(ctx *context.Context) {
 	if p, ok := ctx.ResponseWriter.ResponseWriter.(*responseWriter); ok {
+		unWrapRequest(ctx.Request)
+
 		ctx.ResponseWriter.ResponseWriter = p.ResponseWriter
 		p.action = nil
 	}

@@ -7,6 +7,8 @@ package tingyun_beego
 import (
 	"net/http"
 
+	"unsafe"
+
 	"github.com/TingYunAPM/go"
 	"github.com/astaxie/beego/context"
 )
@@ -29,4 +31,27 @@ func GetAction(rw http.ResponseWriter) *tingyun.Action {
 		return p.action
 	}
 	return nil
+}
+
+type Storage interface {
+	Get() unsafe.Pointer
+	Set(p unsafe.Pointer)
+}
+
+var _routine_local Storage = nil
+
+func RoutineLocalInit(rls Storage) {
+	_routine_local = rls
+}
+
+func RoutineLocalGetAction() *tingyun.Action {
+	if !tingyun.Running() {
+		return nil
+	}
+	if _routine_local == nil {
+		return nil
+	}
+	a := _routine_local.Get()
+
+	return (*tingyun.Action)(a)
 }

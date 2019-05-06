@@ -6,6 +6,7 @@ package tingyun_beego
 import (
 	"io"
 	"net/http"
+	"unsafe"
 
 	"github.com/TingYunAPM/go"
 )
@@ -26,12 +27,19 @@ func wrapRequest(r *http.Request, a *tingyun.Action) bool {
 	if isWraped(r) {
 		return false
 	}
+	if _routine_local != nil {
+		_routine_local.Set(unsafe.Pointer(a))
+	}
 	body := r.Body
 	r.Body = &bodyWrapper{Body: body, action: a}
 	return true
 }
 func unWrapRequest(r *http.Request) {
 	if p, ok := r.Body.(*bodyWrapper); ok {
+
+		if _routine_local != nil {
+			_routine_local.Set(nil)
+		}
 		r.Body = p.Body
 		p.Body = nil
 		p.action = nil
