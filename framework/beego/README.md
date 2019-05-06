@@ -120,5 +120,19 @@ tingyun_beego.Handler("/api", http.HandlerFunc(func(w http.ResponseWriter, r *ht
 }))
 ```
 
+- 使用协程局部存储方式保存/获取tingyun.Action对象
+```
+//go get github.com/TingYunAPM/routinelocal 安装协程局部存储包
+//在main函数文件 import "github.com/TingYunAPM/routinelocal"
+//或者 import "github.com/TingYunAPM/routinelocal/native" //参考 github.com/TingYunAPM/routinelocal/native/Readme.md
+//在main函数开始使用routinelocal.Storage初始化 tingyun_beego,实际用例参考 github.com/TingYunAPM/go/framework/beego/example/server_d
+func main() {
+	err := tingyun.AppInit("tingyun.json")
+	//注意: 如果要使用 tingyun_beego.RoutineLocalGetAction(),下边这行必须添加
+	tingyun_beego.RoutineLocalInit(routinelocal.Get()
+	...
+//在某个函数中要获取tingyun.Action, 使用: tingyun_beego.RoutineLocalGetAction()
+```
+
 ## 其他
 请参考 https://github.com/TingYunAPM/go/blob/master/README.md
