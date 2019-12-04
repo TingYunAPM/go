@@ -28,7 +28,7 @@ router := tingyun_gin.Default()
 - 在handler函数中获取tingyun.Action对象
 ```
 func handler(c *gin.Context){
-    action := tingyn_gin.FindAction(c)
+    action := tingyun_gin.FindAction(c)
     //...
 }
 ```
@@ -36,7 +36,7 @@ func handler(c *gin.Context){
 ## 使用Component
 ```
 func handler(c *gin.Context){
-    action := tingyn_gin.FindAction(c)
+    action := tingyun_gin.FindAction(c)
     componentCheck := action.CreateComponent("CheckJob")
     //do check works
     componentCheck.Finish()
