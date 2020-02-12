@@ -86,6 +86,8 @@ func (c *Component) externalTransaction() (metricName string, duration float64, 
 	} else if err, remote_duration := jsonReadFloat(time_object, "duration"); err != nil {
 		return "", 0, 0, false
 	} else {
+		c.extSecretId = secret_id
+		c.remoteDuration = remote_duration
 		return "ExternalTransaction/" + strings.Replace(c.name, "/", "%2F", -1) + "/" + secret_id + "%2F" + action, float64(c.time.duration / time.Millisecond), remote_duration, true
 	}
 }
@@ -124,11 +126,13 @@ func (c *Component) init(component string, method string, _type uint8) *Componen
 	c.name = component
 	c.method = method
 	c.txdata = ""
+	c.extSecretId = ""
 	c.exId = false
 	c.callStack = nil
 	c.time = timeRange{time.Now(), -1}
 	c.sql = ""
 	c.aloneTime = 0
+	c.remoteDuration = 0
 	c.subs.Init()
 	c._type = _type
 	return c

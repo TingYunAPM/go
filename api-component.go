@@ -12,18 +12,20 @@ import (
 )
 
 type Component struct {
-	action    *Action
-	pre       *Component
-	name      string
-	method    string
-	txdata    string
-	exId      bool
-	callStack interface{}
-	time      timeRange
-	aloneTime time.Duration
-	subs      list.List
-	sql       string
-	_type     uint8
+	action         *Action
+	pre            *Component
+	name           string
+	method         string
+	txdata         string
+	extSecretId    string
+	exId           bool
+	callStack      interface{}
+	time           timeRange
+	aloneTime      time.Duration
+	remoteDuration float64
+	subs           list.List
+	sql            string
+	_type          uint8
 }
 
 func (c *Component) GetAction() *Action {

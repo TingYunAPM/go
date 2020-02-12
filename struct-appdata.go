@@ -59,6 +59,10 @@ func (r *structAppData) Append(action *Action) {
 		if enabled && component.time.duration >= slowValue && component.isDatabaseComponent() {
 			r.sqlTraces.Add(action, component)
 		}
+		if len(component.extSecretId) > 0 {
+			r.generalMetrics.Add("ExternalTransaction/http/"+component.extSecretId, component.remoteDuration)
+			r.generalMetrics.Add("ExternalTransaction/NULL/"+component.extSecretId, component.remoteDuration)
+		}
 	}
 	r.getStructAction(action.name).Add(action, onComponent)
 	if action.trackId != "" {
