@@ -61,7 +61,6 @@ func (r *structAppData) Append(action *Action) {
 		}
 		if len(component.extSecretId) > 0 {
 			r.generalMetrics.Add("ExternalTransaction/http/"+component.extSecretId, component.remoteDuration)
-			r.generalMetrics.Add("ExternalTransaction/NULL/"+component.extSecretId, component.remoteDuration)
 		}
 	}
 	r.getStructAction(action.name).Add(action, onComponent)
@@ -181,7 +180,7 @@ func (r *structAppData) ReadGeneral() []interface{} {
 	}
 	sumAdd := func(metric string, perf *structPerformance) bool {
 		array := strings.Split(metric, "/")
-		if array[0] == "EntryTransaction" {
+		if array[0] == "EntryTransaction" || array[0] == "ExternalTransaction" {
 			add(array[0]+"/NULL/"+array[2], perf)
 			return array[1] != "NULL"
 		}
